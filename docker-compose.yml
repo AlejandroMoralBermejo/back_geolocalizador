@@ -1,0 +1,16 @@
+version: "3.8"
+
+services:
+  fastapi_app:
+    build: .
+    container_name: api_geolocalizador
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - sqlite_data:/app/db  # Asegurar persistencia de la base de datos
+    environment:
+      - ENV=production
+
+volumes:
+  sqlite_data:
