@@ -20,8 +20,10 @@ class UsuarioDB(Base):
     username = Column(String, unique=True, index=True)
     password = Column(String)
     email = Column(String, unique=True, index=True, nullable=True)
+    rol_id = Column(Integer, ForeignKey("roles.id"))
 
     dispositivos = relationship("DispositivoDB", back_populates="usuario", cascade="all, delete")
+    rol = relationship("RolDB", back_populates="usuarios")
 
 class DispositivoDB(Base):
     __tablename__ = "dispositivos"
@@ -44,6 +46,13 @@ class RegistroDB(Base):
 
     dispositivo = relationship("DispositivoDB", back_populates="registros")
 
+class RolDB(Base):
+    __tablename__ = "roles"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nombre = Column(String, unique=True, index=True)   
+    usuarios = relationship("UsuarioDB", back_populates="rol", cascade="all, delete")
+
 # Verifica si la base de datos existe antes de crear las tablas
 db_exists = os.path.exists(DATABASE_PATH)
 
@@ -60,10 +69,25 @@ def get_password_hash(password: str) -> str:
 # Solo crear usuario root si la base de datos era nueva
 if not db_exists:
     with SessionLocal() as db:
+        # Crear roles primero
+        root_role = RolDB(nombre="root")  # El usuario root es el super administrador
+        admin_role = RolDB(nombre="admin")  # Los administradores
+        user_role = RolDB(nombre="user")  # Los usuarios normales
+        premium_role = RolDB(nombre="premium")  # Usuarios premium
+
+        # Agregar roles a la base de datos
+        db.add_all([root_role, admin_role, user_role, premium_role])
+        db.commit()  # Commit para persistir los roles
+
+        # Crear el usuario root con su rol asignado
         root_user = UsuarioDB(
             username="root",
-            password=get_password_hash("root"),  # Hasheamos aquí
-            email="root@root.root"
+            password=get_password_hash("root"),
+            email="root@root.root",
+            rol_id=root_role.id  # Asociar el rol al usuario
         )
+        
+        # Añadir el usuario root
         db.add(root_user)
-        db.commit()
+        db.commit()  # Guardar el usuario root
+
