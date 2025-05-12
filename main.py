@@ -15,6 +15,8 @@ import os
 
 app = FastAPI()
 
+ruta_inicial = "/api/v1.5/"
+
 # Middleware CORS para permitir peticiones desde cualquier origen
 app.add_middleware(
     CORSMiddleware,
@@ -84,7 +86,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
-@app.post("/api/v1.5/token", response_model=Token)
+@app.post(ruta_inicial + "token", response_model=Token)
 def login_for_access_token(form_data: Usuario, db: Session = Depends(get_db)):
     """ Endpoint para obtener el token de acceso al enviar el username y password """
     user = db.query(UsuarioDB).filter(UsuarioDB.username == form_data.username).first()
@@ -104,11 +106,11 @@ def login_for_access_token(form_data: Usuario, db: Session = Depends(get_db)):
 
 '''--------------------- USUARIOS ---------------------'''
 
-@app.get("/api/v1.5/usuarios/", response_model=List[Usuario])
+@app.get(ruta_inicial + "usuarios/", response_model=List[Usuario])
 def obtener_usuarios(db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
     return db.query(UsuarioDB).all()
 
-@app.post("/api/v1.5/usuarios/", response_model=Usuario)
+@app.post(ruta_inicial + "usuarios/", response_model=Usuario)
 def crear_usuario(usuario: Usuario, db: Session = Depends(get_db)):
     """ Crea un nuevo usuario con la contraseña hasheada """
     hashed_password = hash_password(usuario.password)  # Hasheamos la contraseña
@@ -118,14 +120,14 @@ def crear_usuario(usuario: Usuario, db: Session = Depends(get_db)):
     db.refresh(nuevo_usuario)
     return nuevo_usuario
 
-@app.get("/api/v1.5/usuarios/{usuario_id}", response_model=Usuario)
+@app.get(ruta_inicial + "usuarios/{usuario_id}", response_model=Usuario)
 def obtener_usuario(usuario_id: int, db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
     usuario = db.query(UsuarioDB).filter(UsuarioDB.id == usuario_id).first()
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     return usuario
 
-@app.delete("/api/v1.5/usuarios/{usuario_id}")
+@app.delete(ruta_inicial + "usuarios/{usuario_id}")
 def eliminar_usuario(usuario_id: int, db: Session = Depends(get_db),current_user: UsuarioDB = Depends(get_current_user)):
     usuario = db.query(UsuarioDB).filter(UsuarioDB.id == usuario_id).first()
     if not usuario:
@@ -135,11 +137,11 @@ def eliminar_usuario(usuario_id: int, db: Session = Depends(get_db),current_user
     return {"message": "Usuario eliminado"}
 
 '''--------------------- DISPOSITIVOS ---------------------'''
-@app.get("/api/v1.5/dispositivos/", response_model=List[Dispositivo])
+@app.get(ruta_inicial + "dispositivos/", response_model=List[Dispositivo])
 def obtener_dispositivos(db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
     return db.query(DispositivoDB).all()
 
-@app.post("/api/v1.5/dispositivos/", response_model=Dispositivo)
+@app.post(ruta_inicial + "dispositivos/", response_model=Dispositivo)
 def crear_dispositivo(dispositivo: Dispositivo, db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
     usuario_existente = db.query(UsuarioDB).filter(UsuarioDB.id == dispositivo.usuario_id).first()
 
@@ -153,15 +155,21 @@ def crear_dispositivo(dispositivo: Dispositivo, db: Session = Depends(get_db), c
     return nuevo_dispositivo
 
 # Obtener dispositivo por id
-@app.get("/api/v1.5/dispositivos/{dispositivo_id}", response_model=Dispositivo)
+@app.get(ruta_inicial + "dispositivos/{dispositivo_id}", response_model=Dispositivo)
 def obtener_dispositivo(dispositivo_id: int, db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
     dispositivo = db.query(DispositivoDB).filter(DispositivoDB.id == dispositivo_id).first()
     if not dispositivo:
         raise HTTPException(status_code=404, detail="Dispositivo no encontrado")
     return dispositivo
 
+@app.get(ruta_inicial + "dispositivos/usuario/{usuario_id}", response_model=List[Dispositivo])
+def obtener_dispositivo_por_usuario(usuario_id: int, db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
+    dispositivos = db.query(DispositivoDB).filter(DispositivoDB.usuario_id == usuario_id).all()
+    if not dispositivos:
+        raise HTTPException(status_code=404, detail="No se encontraron dispositivos para este usuario")
+    return dispositivos
 
-@app.delete("/api/v1.5/dispositivos/{dispositivo_id}")
+@app.delete(ruta_inicial + "dispositivos/{dispositivo_id}")
 def eliminar_dispositivo(dispositivo_id: int, db: Session = Depends(get_db),current_user: UsuarioDB = Depends(get_current_user)):
     dispositivo = db.query(DispositivoDB).filter(DispositivoDB.id == dispositivo_id).first()
     if not dispositivo:
@@ -170,7 +178,7 @@ def eliminar_dispositivo(dispositivo_id: int, db: Session = Depends(get_db),curr
     db.commit()
     return {"message": "Dispositivo eliminado"}
 
-@app.patch("/api/v1.5/dispositivos/{dispositivo_id}", response_model=Dispositivo)
+@app.patch(ruta_inicial + "dispositivos/{dispositivo_id}", response_model=Dispositivo)
 def actualizar_dispositivo(dispositivo_id: int, dispositivo: Dispositivo, db: Session = Depends(get_db),current_user: UsuarioDB = Depends(get_current_user)):
     dispositivo_existente = db.query(DispositivoDB).filter(DispositivoDB.id == dispositivo_id).first()
     if not dispositivo_existente:
@@ -188,12 +196,12 @@ def actualizar_dispositivo(dispositivo_id: int, dispositivo: Dispositivo, db: Se
 
 
 '''--------------------- ROLES ---------------------'''
-@app.get("/api/v1.5/roles/", response_model=List[Rol])
+@app.get(ruta_inicial + "roles/", response_model=List[Rol])
 def obtener_roles(db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
     return db.query(RolDB).all()
 
 '''--------------------- REGISTROS ---------------------'''
-@app.get("/api/v1.5/registros/", response_model=List[Registro])
+@app.get(ruta_inicial + "registros/", response_model=List[Registro])
 def obtener_registros(db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
     return db.query(RegistroDB).all()
 
@@ -237,7 +245,7 @@ def formateo(datos_gnss):
         return None
 
 
-@app.post("/api/v1.5/registros/", response_model=Registro)
+@app.post(ruta_inicial + "registros/", response_model=Registro)
 def crear_registro(registro: Registro, db: Session = Depends(get_db)):
     dispositivo_existente = db.query(DispositivoDB).filter(DispositivoDB.id == registro.dispositivo_id).first()
     if not dispositivo_existente:
