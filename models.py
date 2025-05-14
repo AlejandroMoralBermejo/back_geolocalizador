@@ -32,3 +32,6 @@ class Registro(BaseModel):
 class Rol(BaseModel):
     id: Optional[int] = None
     nombre: str    
+
+class UsuarioCambioContrasena(BaseModel):
+    nueva_contrasena: str    

@@ -76,6 +76,7 @@ Puedes probar todos los endpoints en la documentación automática que genera Fa
     }
 *
 
+
 ## 🗃️ Estructura del Proyecto
 
 - `main.py` — Punto de entrada de la aplicación.

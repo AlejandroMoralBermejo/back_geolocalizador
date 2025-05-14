@@ -1,17 +1,21 @@
+import datetime
+import re
+import os
+from database import SessionLocal, UsuarioDB, DispositivoDB, RegistroDB, RolDB
+from models import Usuario, Dispositivo, Registro, Token, Rol, UsuarioCambioContrasena
+from uuid import uuid4
+from typing import List, Optional
+from passlib.context import CryptContext
+from jose import JWTError, jwt
 from fastapi import FastAPI, HTTPException, Depends
 from sqlalchemy.orm import Session
 from starlette.middleware.cors import CORSMiddleware
-from database import SessionLocal, UsuarioDB, DispositivoDB, RegistroDB, RolDB
-from models import Usuario, Dispositivo, Registro, Token, Rol
-from uuid import uuid4
-from passlib.context import CryptContext
-from jose import JWTError, jwt
 from fastapi.security import OAuth2PasswordBearer
-from typing import List, Optional
-import datetime
-import re
 from dotenv import load_dotenv
-import os
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
 
 app = FastAPI()
 
@@ -34,6 +38,8 @@ load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = 120
+PASSWORD_GMAIL = os.getenv("PASSWORD_GMAIL")
+MI_CORREO = os.getenv("MY_EMAIL")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -55,12 +61,12 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 # Función para crear el token de acceso JWT
-def create_access_token(data: dict, expires_delta: Optional[datetime.timedelta] = None) -> str:
+def create_access_token(data: dict, expires_delta: Optional[datetime.timedelta] = None, time: int = ACCESS_TOKEN_EXPIRE_MINUTES) -> str:
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.datetime.utcnow() + expires_delta
     else:
-        expire = datetime.datetime.utcnow() + datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.datetime.utcnow() + datetime.timedelta(minutes=time)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -136,7 +142,63 @@ def eliminar_usuario(usuario_id: int, db: Session = Depends(get_db),current_user
     db.commit()
     return {"message": "Usuario eliminado"}
 
+def enviar_correo(destinatario: str, asunto: str, cuerpo: str):
+    mensaje = MIMEMultipart()
+    mensaje['From'] = MI_CORREO
+    mensaje['To'] = destinatario
+    mensaje['Subject'] = asunto
+    mensaje.attach(MIMEText(cuerpo, 'plain', 'utf-8'))
+    try:
+        servidor = smtplib.SMTP('smtp.gmail.com', 587)
+        servidor.starttls()
+        servidor.login(MI_CORREO, PASSWORD_GMAIL)
+        servidor.sendmail(MI_CORREO, destinatario, mensaje.as_string())
+        servidor.quit()
+        print("Correo enviado correctamente")
+    except Exception as e:
+        print("Error al enviar correo:", e)
+
+# Endpoint para solicitar cambio de contraseña
+@app.post(ruta_inicial + "usuarios/cambiar_contrasena/{usuario_id}")
+def pedir_cambio_contrasena(usuario_id: int, db: Session = Depends(get_db)):
+    token = create_access_token(data={"sub": "cambiar_contrasena"}, time=15)
+    usuario = db.query(UsuarioDB).filter(UsuarioDB.id == usuario_id).first()
+
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    destinatario = usuario.email
+    asunto = "Cambio de contrasena"
+    mensaje = f"Para cambiar tu contrasena, haz clic en el siguiente enlace: http://localhost:8000/api/v1.5/usuarios/cambiar_contrasena/{usuario_id}/{token}"
+    enviar_correo(destinatario=destinatario, asunto=asunto, cuerpo=mensaje)
+
+    return {
+        "mensaje": "Se ha enviado un correo para cambiar la contraseña",
+    }
+
+# Endpoint para realizar el cambio de contraseña
+@app.post(ruta_inicial + "usuarios/cambiar_contrasena/{usuario_id}/{token}")
+def cambiar_contrasena( usuario_id: int, token: str , datos: UsuarioCambioContrasena ,db: Session = Depends(get_db)):
+    payload = verify_token(token)
+    if payload is None or payload.get("sub") != "cambiar_contrasena":
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    # Verificar si el usuario existe
+    usuario = db.query(UsuarioDB).filter(UsuarioDB.id == usuario_id).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    # Cambiar la contraseña
+    hashed_password = hash_password(datos.nueva_contrasena)
+    usuario.password = hashed_password
+    db.commit()
+    db.refresh(usuario)
+    return {"message": "Contraseña cambiada exitosamente"}
+
+
+
 '''--------------------- DISPOSITIVOS ---------------------'''
+
 @app.get(ruta_inicial + "dispositivos/", response_model=List[Dispositivo])
 def obtener_dispositivos(db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
     return db.query(DispositivoDB).all()
@@ -201,6 +263,7 @@ def obtener_roles(db: Session = Depends(get_db), current_user: UsuarioDB = Depen
     return db.query(RolDB).all()
 
 '''--------------------- REGISTROS ---------------------'''
+
 @app.get(ruta_inicial + "registros/", response_model=List[Registro])
 def obtener_registros(db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
     return db.query(RegistroDB).all()
