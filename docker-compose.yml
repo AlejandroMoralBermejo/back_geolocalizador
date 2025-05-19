@@ -8,9 +8,22 @@ services:
       - "8000:8000"
     volumes:
       - .:/app
-      - sqlite_data:/app/db  # Asegurar persistencia de la base de datos
+    env_file:
+      - .env
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15
+    container_name: postgres_geolocalizador
     environment:
-      - ENV=production
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
 
 volumes:
-  sqlite_data:
+  pgdata:
