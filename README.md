@@ -45,7 +45,12 @@ Este proyecto es una API RESTful desarrollada con **FastAPI** y **SQLAlchemy** p
    BBDD_USER=""
    BBDD_PASSWORD=""
 
-5. Ejecuta el servidor:
+5. Asegurarte de la URL de la base de datos:
+   En el caso de que lo ejecutes localmente sin Docker debes asegurarte de que 
+   en el archivo database.py encuentres la siguiente url
+   DATABASE_URL = f"postgresql://{usuarioDb}:{passwordDb}@localhost:5432/postgres"   
+
+6. Ejecuta el servidor:
    ```bash
    uvicorn main:app --reload
    ```
@@ -68,7 +73,11 @@ Este proyecto es una API RESTful desarrollada con **FastAPI** y **SQLAlchemy** p
    BBDD_USER=""
    BBDD_PASSWORD=""
 
-3. Ejecuta:
+3. Asegurarte de la URL de la base de datos:
+   Debes asegurarte de que en el archivo database.py encuentres la siguiente url
+   DATABASE_URL = f"postgresql://{usuarioDb}:{passwordDb}@db:5432/postgres"
+
+4. Ejecuta:
    ```bash
    docker-compose up --build
    ```

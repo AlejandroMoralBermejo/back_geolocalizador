@@ -9,7 +9,7 @@ load_dotenv()
 
 usuarioDb = os.getenv("BBDD_USER")
 passwordDb = os.getenv("BBDD_PASSWORD")
-DATABASE_URL = f"postgresql://{usuarioDb}:{passwordDb}@localhost:5432/postgres"
+DATABASE_URL = f"postgresql://{usuarioDb}:{passwordDb}@db:5432/postgres"
 engine = create_engine(DATABASE_URL)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -84,4 +84,5 @@ def create_initial_roles_and_root():
         else:
             print("Roles ya existen. No se hizo nada.")
 
+Base.metadata.create_all(bind=engine)
 create_initial_roles_and_root()  
