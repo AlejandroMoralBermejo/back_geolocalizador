@@ -2,7 +2,7 @@ import datetime
 import re
 import os
 from database import SessionLocal, UsuarioDB, DispositivoDB, RegistroDB, RolDB
-from models import Usuario, Dispositivo, Registro, Token, Rol, UsuarioCambioContrasena
+from models import Usuario, Dispositivo, Registro, Token, Rol, UsuarioCambioContrasena, UsuarioLogin
 from uuid import uuid4
 from typing import List, Optional
 from passlib.context import CryptContext
@@ -93,11 +93,9 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     return user
 
 @app.post(ruta_inicial + "token", response_model=Token)
-def login_for_access_token(form_data: Usuario, db: Session = Depends(get_db)):
-    """ Endpoint para obtener el token de acceso al enviar el username y password """
+def login_for_access_token(form_data: UsuarioLogin, db: Session = Depends(get_db)):
     user = db.query(UsuarioDB).filter(UsuarioDB.username == form_data.username).first()
 
-    # Verificar si el usuario existe y la contraseña es válida
     if not user or not verify_password(form_data.password, user.password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
@@ -109,6 +107,7 @@ def login_for_access_token(form_data: Usuario, db: Session = Depends(get_db)):
         "token_type": "bearer",
         "role": user.rol.nombre
     }
+
 
 '''--------------------- USUARIOS ---------------------'''
 

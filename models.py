@@ -4,6 +4,10 @@ from datetime import datetime
 from typing import Optional
 
 
+class UsuarioLogin(BaseModel):
+    username: str
+    password: str
+
 class Usuario(BaseModel):
     id: Optional[int] = None
     username: str
