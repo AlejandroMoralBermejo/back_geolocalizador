@@ -75,7 +75,7 @@ Este proyecto es una API RESTful desarrollada con **FastAPI** y **SQLAlchemy** p
 
 3. Asegurarte de la URL de la base de datos:
    Debes asegurarte de que en el archivo database.py encuentres la siguiente url
-   DATABASE_URL = f"postgresql://{usuarioDb}:{passwordDb}@db:5432/postgres"
+   DATABASE_URL = f"postgresql://{usuarioDb}:{passwordDb}@:5432/postgres"
 
 4. Ejecuta:
    ```bash
