@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: geolocalizer-app
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: geolocalizer-app
+  template:
+    metadata:
+      labels:
+        app: geolocalizer-app
+    spec:
+      containers:
+      - name: geolocalizer-container
+        image: alejandromoralbermejo/geolocalizer:latest
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - secretRef:
+            name: db-credentials
+        env:
+        - name: DB_HOST
+          value: "db"
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: geolocalizer-service
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 8000
+  selector:
+    app: geolocalizer-app

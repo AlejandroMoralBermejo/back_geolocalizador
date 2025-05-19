@@ -25,4 +25,7 @@ Thumbs.db
 *.swo
 
 *.db
+
+# Archivos de configuración de entorno
 *.env
+Kubernetes/*credentials*

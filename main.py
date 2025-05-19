@@ -19,7 +19,7 @@ from email.mime.multipart import MIMEMultipart
 
 app = FastAPI()
 
-ruta_inicial = "/api/v1.5/"
+ruta_inicial = "/api/v2.0/"
 
 # Middleware CORS para permitir peticiones desde cualquier origen
 app.add_middleware(
