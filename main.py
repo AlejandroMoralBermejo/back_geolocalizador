@@ -20,6 +20,7 @@ from email.mime.multipart import MIMEMultipart
 app = FastAPI()
 
 ruta_inicial = "/api/v2.0/"
+base_url = "192.168.49.2:30080"
 
 # Middleware CORS para permitir peticiones desde cualquier origen
 app.add_middleware(
@@ -168,7 +169,7 @@ def pedir_cambio_contrasena(usuario_id: int, db: Session = Depends(get_db)):
 
     destinatario = usuario.email
     asunto = "Cambio de contrasena"
-    mensaje = f"Para cambiar tu contrasena, haz clic en el siguiente enlace: http://localhost:8000/api/v1.5/usuarios/cambiar_contrasena/{usuario_id}/{token}"
+    mensaje = f"Para cambiar tu contrasena, haz clic en el siguiente enlace: http://{base_url}{ruta_inicial}usuarios/cambiar_contrasena/{usuario_id}/{token}"
     enviar_correo(destinatario=destinatario, asunto=asunto, cuerpo=mensaje)
 
     return {
