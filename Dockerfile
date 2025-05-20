@@ -10,9 +10,6 @@ COPY . .
 # Instalar dependencias
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Crear el directorio donde se guardará SQLite
-RUN mkdir -p /app/db
-
 # Exponer el puerto en el que correrá la API
 EXPOSE 8000
 

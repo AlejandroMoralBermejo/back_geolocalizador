@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: geolocalizer-app
 spec:
-  replicas: 5
+  replicas: 3
   selector:
     matchLabels:
       app: geolocalizer-app
@@ -18,22 +18,29 @@ spec:
         ports:
         - containerPort: 8000
         envFrom:
+        - configMapRef:
+            name: app-config
         - secretRef:
             name: db-credentials
         env:
         - name: DB_HOST
           value: "db"
-
----
-
-apiVersion: v1
-kind: Service
-metadata:
-  name: geolocalizer-service
-spec:
-  type: LoadBalancer
-  ports:
-  - port: 80
-    targetPort: 8000
-  selector:
-    app: geolocalizer-app
+        readinessProbe:
+          httpGet:
+            path: /docs
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /docs
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
