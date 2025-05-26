@@ -1,18 +1,24 @@
 import os
-from sqlalchemy import create_engine, Column, String, Boolean, ForeignKey, DateTime, Integer
+from sqlalchemy import create_engine, Column, String, Boolean, ForeignKey, DateTime, Integer, select
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 import datetime
+from passlib.context import CryptContext
+from dotenv import load_dotenv
 
-# Ruta de la base de datos
-DATABASE_PATH = "./gps_data.db"
-DATABASE_URL = f"sqlite:///{DATABASE_PATH}"
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+load_dotenv()
 
-# Crear sesión
+usuarioDb = os.getenv("BBDD_USER")
+passwordDb = os.getenv("BBDD_PASSWORD")
+DATABASE_URL = f"postgresql://{usuarioDb}:{passwordDb}@db:5432/postgres"
+engine = create_engine(DATABASE_URL)
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# Definición de modelos
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+def get_password_hash(password: str) -> str:
+    return pwd_context.hash(password)
+
 class UsuarioDB(Base):
     __tablename__ = "usuarios"
 
@@ -51,43 +57,32 @@ class RolDB(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String, unique=True, index=True)   
-    usuarios = relationship("UsuarioDB", back_populates="rol", cascade="all, delete")
+    usuarios = relationship("UsuarioDB", back_populates="rol", cascade="all, delete")  
 
-# Verifica si la base de datos existe antes de crear las tablas
-db_exists = os.path.exists(DATABASE_PATH)
-
-# Crea las tablas
-Base.metadata.create_all(bind=engine)
-
-from passlib.context import CryptContext
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
-
-# Solo crear usuario root si la base de datos era nueva
-if not db_exists:
+def create_initial_roles_and_root():
+    print("Analizando si existen roles...")
     with SessionLocal() as db:
-        # Crear roles primero
-        root_role = RolDB(nombre="root")  # El usuario root es el super administrador
-        admin_role = RolDB(nombre="admin")  # Los administradores
-        user_role = RolDB(nombre="user")  # Los usuarios normales
-        premium_role = RolDB(nombre="premium")  # Usuarios premium
+        roles_exist = db.execute(select(RolDB).limit(1)).first()
+        if not roles_exist:
+            print("No existen roles. Creando roles y usuario root...")
+            root_role = RolDB(nombre="root")
+            admin_role = RolDB(nombre="admin")
+            user_role = RolDB(nombre="user")
+            premium_role = RolDB(nombre="premium")
+            db.add_all([root_role, admin_role, user_role, premium_role])
+            db.commit()
 
-        # Agregar roles a la base de datos
-        db.add_all([root_role, admin_role, user_role, premium_role])
-        db.commit()  # Commit para persistir los roles
+            root_user = UsuarioDB(
+                username="root",
+                password=get_password_hash("root"),
+                email="root@root.root",
+                rol_id=root_role.id
+            )
+            db.add(root_user)
+            db.commit()
+            print("Roles y usuario root creados.")
+        else:
+            print("Roles ya existen. No se hizo nada.")
 
-        # Crear el usuario root con su rol asignado
-        root_user = UsuarioDB(
-            username="root",
-            password=get_password_hash("root"),
-            email="root@root.root",
-            rol_id=root_role.id  # Asociar el rol al usuario
-        )
-        
-        # Añadir el usuario root
-        db.add(root_user)
-        db.commit()  # Guardar el usuario root
-
+Base.metadata.create_all(bind=engine)
+create_initial_roles_and_root()  

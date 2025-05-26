@@ -35,7 +35,22 @@ Este proyecto es una API RESTful desarrollada con **FastAPI** y **SQLAlchemy** p
    pip install -r requirements.txt
    ```
 
-4. Ejecuta el servidor:
+4. Genera el archivo .env:
+   El archivo .env debe tener los siguientes parámetros
+   SECRET_KEY=""
+   ALGORITHM=""
+   ACCESS_TOKEN_EXPIRE_MINUTES=30
+   PASSWORD_GMAIL=""
+   MY_EMAIL=""
+   BBDD_USER=""
+   BBDD_PASSWORD=""
+
+5. Asegurarte de la URL de la base de datos:
+   En el caso de que lo ejecutes localmente sin Docker debes asegurarte de que 
+   en el archivo database.py encuentres la siguiente url
+   DATABASE_URL = f"postgresql://{usuarioDb}:{passwordDb}@localhost:5432/postgres"   
+
+6. Ejecuta el servidor:
    ```bash
    uvicorn main:app --reload
    ```
@@ -49,7 +64,20 @@ Este proyecto es una API RESTful desarrollada con **FastAPI** y **SQLAlchemy** p
    docker build -t fastapi-api .
    ```
 
-2. Ejecuta:
+2. También debes tener creado el .env con las variables:
+   SECRET_KEY=""
+   ALGORITHM=""
+   ACCESS_TOKEN_EXPIRE_MINUTES=30
+   PASSWORD_GMAIL=""
+   MY_EMAIL=""
+   BBDD_USER=""
+   BBDD_PASSWORD=""
+
+3. Asegurarte de la URL de la base de datos:
+   Debes asegurarte de que en el archivo database.py encuentres la siguiente url
+   DATABASE_URL = f"postgresql://{usuarioDb}:{passwordDb}@:5432/postgres"
+
+4. Ejecuta:
    ```bash
    docker-compose up --build
    ```
@@ -73,6 +101,16 @@ Este proyecto es una API RESTful desarrollada con **FastAPI** y **SQLAlchemy** p
 Puedes probar todos los endpoints en la documentación automática que genera FastAPI:
 
 - Swagger UI: http://localhost:8000/docs
+
+- Existe un par de endpoints especiales como lo son:
+
+1. /api/v1.5/usuarios/cambiar_contrasena/{usuario_id}
+
+   Este endpoint le mandará un correo al usuario del id con la url para cambiar la contraseña
+
+2. /api/v1.5/usuarios/cambiar_contrasena/{usuario_id}/{token}
+
+   Este endpoint se accede desde el correo mandado por el anterior ya que integra el token del correo
 
 ### 📌 Roles predefinidos
 
