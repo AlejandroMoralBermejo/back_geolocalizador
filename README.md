@@ -75,7 +75,7 @@ Este proyecto es una API RESTful desarrollada con **FastAPI** y **SQLAlchemy** p
 
 3. Asegurarte de la URL de la base de datos:
    Debes asegurarte de que en el archivo database.py encuentres la siguiente url
-   DATABASE_URL = f"postgresql://{usuarioDb}:{passwordDb}@:5432/postgres"
+   DATABASE_URL = f"postgresql://{usuarioDb}:{passwordDb}@db:5432/postgres"
 
 4. Ejecuta:
    ```bash
@@ -84,10 +84,33 @@ Este proyecto es una API RESTful desarrollada con **FastAPI** y **SQLAlchemy** p
 
    La API estará disponible en: http://localhost:8000
 
+### Opción 3: Ejecutar con Kubernetes
+
+1. Tener instalado Kubernetes con tu paquete preferido en mi caso utilizo minikube
+
+2. Crear el archivo db-credentials.yaml con el contenido
+   apiVersion: v1
+   kind: Secret
+   metadata:
+      name: db-credentials
+   type: Opaque
+   stringData:
+      SECRET_KEY: ""
+      ALGORITHM: ""
+      ACCESS_TOKEN_EXPIRE_MINUTES: "30"
+      PASSWORD_GMAIL: ""
+      MY_EMAIL: ""
+      BBDD_USER: ""
+      BBDD_PASSWORD: ""
+      POSTGRES_DB: ""
+
+3. Ejecutar con kubectl apply -f . // o con kubectl apply -f <Nombre del archivo>.yaml    
+
 ## 🔐 Autenticación
 
-- Endpoint de login: `POST /token`
-- Envía un JSON con `username`, `email` y `password` para obtener un token de acceso.  
+- Existen 2 endpoints para iniciar sesión: `POST /token_email` y `POST /token_username`
+- Si utilizas el endpoint `/token_email` el cuerpo se compone de email y password
+- Si utilizas `/token_username` el cuerpo es con username y password 
 - Por defecto, se genera al iniciar un usuario con:
   - `username`: root  
   - `password`: root  
@@ -100,7 +123,7 @@ Este proyecto es una API RESTful desarrollada con **FastAPI** y **SQLAlchemy** p
 
 Puedes probar todos los endpoints en la documentación automática que genera FastAPI:
 
-- Swagger UI: http://localhost:8000/docs
+- Swagger UI: http://localhost:8000/docs 
 
 - Existe un par de endpoints especiales como lo son:
 
