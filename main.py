@@ -219,6 +219,12 @@ def cambiar_contrasena( usuario_id: int, token: str , datos: models.UsuarioCambi
 def obtener_dispositivos(db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
     return db.query(DispositivoDB).all()
 
+
+def validacion_mac(mac):
+    # Patrón para MAC con ':' o '-' como separador
+    patron = r'^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$'
+    return re.match(patron, mac) is not None
+
 @app.post(ruta_inicial + "dispositivos/", response_model=models.MostrarDispositivo)
 def crear_dispositivo(dispositivo: models.CrearDispositivo, db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
     usuario_existente = db.query(UsuarioDB).filter(UsuarioDB.id == dispositivo.usuario_id).first()
@@ -226,7 +232,10 @@ def crear_dispositivo(dispositivo: models.CrearDispositivo, db: Session = Depend
     if not usuario_existente:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
-    nuevo_dispositivo = DispositivoDB(active=dispositivo.active, nombre=dispositivo.nombre, usuario_id=dispositivo.usuario_id)
+    if not dispositivo.mac or not validacion_mac(dispositivo.mac):
+        raise HTTPException(status_code=400, detail="MAC inválida. Debe tener el formato XX:XX:XX:XX:XX:XX o XX-XX-XX-XX-XX-XX")
+
+    nuevo_dispositivo = DispositivoDB(active=dispositivo.active, nombre=dispositivo.nombre, usuario_id=dispositivo.usuario_id, mac=dispositivo.mac)
     db.add(nuevo_dispositivo)
     db.commit()
     db.refresh(nuevo_dispositivo)
@@ -257,7 +266,7 @@ def eliminar_dispositivo(dispositivo_id: int, db: Session = Depends(get_db),curr
     return {"message": "Dispositivo eliminado"}
 
 @app.patch(ruta_inicial + "dispositivos/{dispositivo_id}", response_model=models.MostrarDispositivo)
-def actualizar_dispositivo(dispositivo_id: int, dispositivo: models.CrearDispositivo, db: Session = Depends(get_db),current_user: UsuarioDB = Depends(get_current_user)):
+def actualizar_dispositivo(dispositivo_id: int, dispositivo: models.ActualizarDispositivo, db: Session = Depends(get_db),current_user: UsuarioDB = Depends(get_current_user)):
     dispositivo_existente = db.query(DispositivoDB).filter(DispositivoDB.id == dispositivo_id).first()
     if not dispositivo_existente:
         raise HTTPException(status_code=404, detail="Dispositivo no encontrado")
@@ -326,10 +335,10 @@ def formateo(datos_gnss):
 
 @app.post(ruta_inicial + "registros/", response_model=models.MostrarRegistro)
 def crear_registro(registro: models.CrearRegistro, db: Session = Depends(get_db)):
-    dispositivo_existente = db.query(DispositivoDB).filter(DispositivoDB.id == registro.dispositivo_id).first()
+    dispositivo_existente = db.query(DispositivoDB).filter(DispositivoDB.mac == registro.mac).first()
     if not dispositivo_existente:
         raise HTTPException(status_code=404, detail="Dispositivo no encontrado")
-
+    print(f"Dispositivo encontrado: {dispositivo_existente}")  
     if not registro.coordenadas:
         raise HTTPException(status_code=400, detail="Datos GNSS no proporcionados")
 
@@ -341,7 +350,7 @@ def crear_registro(registro: models.CrearRegistro, db: Session = Depends(get_db)
 
     nuevo_registro = RegistroDB(
         coordenadas=coordenadas,  # Solo almacenamos las coordenadas
-        dispositivo_id=registro.dispositivo_id
+        dispositivo_id=dispositivo_existente.id
     )
 
     db.add(nuevo_registro)

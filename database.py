@@ -35,6 +35,7 @@ class DispositivoDB(Base):
     __tablename__ = "dispositivos"
 
     id = Column(Integer, primary_key=True, index=True)
+    mac = Column(String, unique=True, index=True, nullable=False)
     nombre = Column(String)
     active = Column(Boolean, default=False)
     usuario_id = Column(Integer, ForeignKey("usuarios.id", ondelete="CASCADE"))
