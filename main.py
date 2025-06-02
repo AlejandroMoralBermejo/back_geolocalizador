@@ -272,7 +272,8 @@ def actualizar_dispositivo(dispositivo_id: int, dispositivo: models.ActualizarDi
         raise HTTPException(status_code=404, detail="Dispositivo no encontrado")
     
     if(dispositivo.mac is not None):
-        dispositivo_existente.mac = dispositivo.mac
+        if not validacion_mac(dispositivo.mac):
+            dispositivo_existente.mac = dispositivo.mac
 
     if(dispositivo.nombre is not None):
         dispositivo_existente.nombre = dispositivo.nombre
