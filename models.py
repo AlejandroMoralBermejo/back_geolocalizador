@@ -10,7 +10,15 @@ from typing import Optional
 class Token(BaseModel):
     access_token: str
     token_type: str
-    role: str      
+    role: str   
+
+class MostrarToken(BaseModel):
+    access_token: str
+    token_type: str
+    role: str
+    usuario_id: int
+    class Config:
+        orm_mode = True
 
 """ ------- ROL ------- """
 class Rol(BaseModel):
@@ -89,7 +97,6 @@ class CrearDispositivo(BaseModel):
     mac: str
     nombre: str
     active: Optional[bool] = None
-    usuario_id: Optional[int] = None
     class Config:
         orm_mode = True          
 

@@ -93,7 +93,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
-@app.post(ruta_inicial + "token_email", response_model=models.Token)
+@app.post(ruta_inicial + "token_email", response_model=models.MostrarToken)
 def login_for_access_token_with_username(form_data: models.UsuarioLoginWithEmail, db: Session = Depends(get_db)):
     user = db.query(UsuarioDB).filter(UsuarioDB.email == form_data.email).first()
 
@@ -104,12 +104,13 @@ def login_for_access_token_with_username(form_data: models.UsuarioLoginWithEmail
         data={"sub": user.username, "role": user.rol.nombre}
     )
     return {
+        "usuario_id": user.id,
         "access_token": access_token,
         "token_type": "bearer",
         "role": user.rol.nombre
     }
 
-@app.post(ruta_inicial + "token_username", response_model=models.Token)
+@app.post(ruta_inicial + "token_username", response_model=models.MostrarToken)
 def login_for_access_token_with_username(form_data: models.UsuarioLoginWithUsername, db: Session = Depends(get_db)):
     user = db.query(UsuarioDB).filter(UsuarioDB.username == form_data.username).first()
     print(user)
@@ -120,6 +121,7 @@ def login_for_access_token_with_username(form_data: models.UsuarioLoginWithUsern
         data={"sub": user.username, "role": user.rol.nombre}
     )
     return {
+        "usuario_id": user.id,
         "access_token": access_token,
         "token_type": "bearer",
         "role": user.rol.nombre
@@ -128,11 +130,11 @@ def login_for_access_token_with_username(form_data: models.UsuarioLoginWithUsern
 
 '''--------------------- USUARIOS ---------------------'''
 
-@app.get(ruta_inicial + "usuarios/", response_model=List[models.MostrarUsuario])
+@app.get(ruta_inicial + "usuarios", response_model=List[models.MostrarUsuario])
 def obtener_usuarios(db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
     return db.query(UsuarioDB).all()
 
-@app.post(ruta_inicial + "usuarios/", response_model=models.MostrarUsuario)
+@app.post(ruta_inicial + "usuarios", response_model=models.MostrarUsuario)
 def crear_usuario(usuario: models.UsuarioCreacion, db: Session = Depends(get_db)):
     """ Crea un nuevo usuario con la contraseña hasheada """
     hashed_password = hash_password(usuario.password)  # Hasheamos la contraseña
@@ -215,7 +217,7 @@ def cambiar_contrasena( usuario_id: int, token: str , datos: models.UsuarioCambi
 
 '''--------------------- DISPOSITIVOS ---------------------'''
 
-@app.get(ruta_inicial + "dispositivos/", response_model=List[models.MostrarDispositivo])
+@app.get(ruta_inicial + "dispositivos", response_model=List[models.MostrarDispositivo])
 def obtener_dispositivos(db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
     return db.query(DispositivoDB).all()
 
@@ -225,9 +227,9 @@ def validacion_mac(mac):
     patron = r'^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$'
     return re.match(patron, mac) is not None
 
-@app.post(ruta_inicial + "dispositivos/", response_model=models.MostrarDispositivo)
-def crear_dispositivo(dispositivo: models.CrearDispositivo, db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
-    usuario_existente = db.query(UsuarioDB).filter(UsuarioDB.id == dispositivo.usuario_id).first()
+@app.post(ruta_inicial + "dispositivos/{id_usuario}", response_model=models.MostrarDispositivo)
+def crear_dispositivo(id_usuario: int,dispositivo: models.CrearDispositivo, db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
+    usuario_existente = db.query(UsuarioDB).filter(UsuarioDB.id == id_usuario).first()
 
     if not usuario_existente:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
@@ -235,7 +237,7 @@ def crear_dispositivo(dispositivo: models.CrearDispositivo, db: Session = Depend
     if not dispositivo.mac or not validacion_mac(dispositivo.mac):
         raise HTTPException(status_code=400, detail="MAC inválida. Debe tener el formato XX:XX:XX:XX:XX:XX o XX-XX-XX-XX-XX-XX")
 
-    nuevo_dispositivo = DispositivoDB(active=dispositivo.active, nombre=dispositivo.nombre, usuario_id=dispositivo.usuario_id, mac=dispositivo.mac)
+    nuevo_dispositivo = DispositivoDB(active=dispositivo.active, nombre=dispositivo.nombre, usuario_id=id_usuario, mac=dispositivo.mac)
     db.add(nuevo_dispositivo)
     db.commit()
     db.refresh(nuevo_dispositivo)
@@ -287,13 +289,13 @@ def actualizar_dispositivo(dispositivo_id: int, dispositivo: models.ActualizarDi
 
 
 '''--------------------- ROLES ---------------------'''
-@app.get(ruta_inicial + "roles/", response_model=List[models.Rol])
+@app.get(ruta_inicial + "roles", response_model=List[models.Rol])
 def obtener_roles(db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
     return db.query(RolDB).all()
 
 '''--------------------- REGISTROS ---------------------'''
 
-@app.get(ruta_inicial + "registros/", response_model=List[models.MostrarRegistro])
+@app.get(ruta_inicial + "registros", response_model=List[models.MostrarRegistro])
 def obtener_registros(db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
     return db.query(RegistroDB).all()
 
@@ -337,7 +339,7 @@ def formateo(datos_gnss):
         return None
 
 
-@app.post(ruta_inicial + "registros/", response_model=models.MostrarRegistro)
+@app.post(ruta_inicial + "registros", response_model=models.MostrarRegistro)
 def crear_registro(registro: models.CrearRegistro, db: Session = Depends(get_db)):
     dispositivo_existente = db.query(DispositivoDB).filter(DispositivoDB.mac == registro.mac).first()
     if not dispositivo_existente:
