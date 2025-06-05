@@ -10,7 +10,15 @@ from typing import Optional
 class Token(BaseModel):
     access_token: str
     token_type: str
-    role: str      
+    role: str   
+
+class MostrarToken(BaseModel):
+    access_token: str
+    token_type: str
+    role: str
+    usuario_id: int
+    class Config:
+        orm_mode = True
 
 """ ------- ROL ------- """
 class Rol(BaseModel):
@@ -61,6 +69,7 @@ class MostrarUsuario(BaseModel):
 """ ------- DISPOSITIVOS ------- """
 class Dispositivo(BaseModel):
     id: Optional[int] = None
+    mac: Optional[str] = None
     nombre: Optional[str] = None
     active: Optional[bool] = None
     usuario_id: Optional[int] = None
@@ -69,6 +78,7 @@ class Dispositivo(BaseModel):
 
 class MostrarDispositivo(BaseModel):
     id: Optional[int] = None
+    mac: Optional[str] = None
     nombre: Optional[str] = None
     active: Optional[bool] = None
     usuario: MostrarUsuario
@@ -77,18 +87,26 @@ class MostrarDispositivo(BaseModel):
 
 class MostrarDispositivoSinUsuario(BaseModel):
     id: Optional[int] = None
+    mac: Optional[str] = None
     nombre: Optional[str] = None
     active: Optional[bool] = None
     class Config:
         orm_mode = True        
 
 class CrearDispositivo(BaseModel):
+    mac: str
     nombre: str
     active: Optional[bool] = None
-    usuario_id: Optional[int] = None
     class Config:
         orm_mode = True          
 
+class ActualizarDispositivo(BaseModel):
+    mac: Optional[str] = None
+    nombre: Optional[str] = None
+    active: Optional[bool] = None
+    usuario_id: Optional[int] = None
+    class Config:
+        orm_mode = True
 
 
 """ ------- REGISTRO ------- """
@@ -111,6 +129,6 @@ class MostrarRegistro(BaseModel):
 class CrearRegistro(BaseModel):
     fecha: Optional[datetime] = None
     coordenadas: str
-    dispositivo_id: int
+    mac: str
     class Config:
         orm_mode = True       
