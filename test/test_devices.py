@@ -86,7 +86,7 @@ def client(db):
 @pytest.fixture(scope="function")
 def token(client):
     login_data = {"username": "root", "password": "root"}
-    response = client.post("/api/v2.2/token_username", json=login_data)
+    response = client.post("/api/v2.3/token_username", json=login_data)
     assert response.status_code == 200
     token = response.json()["access_token"]
     return token
@@ -99,12 +99,12 @@ def token(client):
 
 def test_get_all_dispositivos(client, token):
     headers = {"Authorization": f"Bearer {token}"}
-    response = client.get("/api/v2.2/dispositivos", headers=headers)
+    response = client.get("/api/v2.3/dispositivos", headers=headers)
     assert response.status_code == 200
 
 def test_crear_dispositivo(client, token):
     headers = {"Authorization": f"Bearer {token}"}
-    response_users = client.get("/api/v2.2/usuarios", headers=headers)
+    response_users = client.get("/api/v2.3/usuarios", headers=headers)
     assert response_users.status_code == 200
     user_id = response_users.json()[0]["id"]
 
@@ -116,12 +116,12 @@ def test_crear_dispositivo(client, token):
         "active": True
     }
 
-    response = client.post(f"/api/v2.2/dispositivos/{user_id}", json=nuevo_disp, headers=headers)
+    response = client.post(f"/api/v2.3/dispositivos/{user_id}", json=nuevo_disp, headers=headers)
     assert response.status_code == 200
 
 def test_crear_dispositivo_mac_invalida(client, token):
     headers = {"Authorization": f"Bearer {token}"}
-    response_users = client.get("/api/v2.2/usuarios", headers=headers)
+    response_users = client.get("/api/v2.3/usuarios", headers=headers)
     user_id = response_users.json()[0]["id"]
 
     nuevo_disp = {
@@ -129,35 +129,35 @@ def test_crear_dispositivo_mac_invalida(client, token):
         "nombre": "DispositivoMal",
         "active": True
     }
-    response = client.post(f"/api/v2.2/dispositivos/{user_id}", json=nuevo_disp, headers=headers)
+    response = client.post(f"/api/v2.3/dispositivos/{user_id}", json=nuevo_disp, headers=headers)
     assert response.status_code == 400
     assert response.json()["detail"].startswith("MAC inválida")
 
 def test_obtener_dispositivo_por_id(client, token):
     headers = {"Authorization": f"Bearer {token}"}
-    response = client.get("/api/v2.2/dispositivos", headers=headers)
+    response = client.get("/api/v2.3/dispositivos", headers=headers)
     dispositivo_id = response.json()[0]["id"]
 
-    response = client.get(f"/api/v2.2/dispositivos/{dispositivo_id}", headers=headers)
+    response = client.get(f"/api/v2.3/dispositivos/{dispositivo_id}", headers=headers)
     assert response.status_code == 200
     data = response.json()
     assert data["id"] == dispositivo_id
 
 def test_eliminar_dispositivo(client, token):
     headers = {"Authorization": f"Bearer {token}"}
-    response = client.get("/api/v2.2/dispositivos", headers=headers)
+    response = client.get("/api/v2.3/dispositivos", headers=headers)
     dispositivo_id = response.json()[0]["id"]
 
-    response = client.delete(f"/api/v2.2/dispositivos/{dispositivo_id}", headers=headers)
+    response = client.delete(f"/api/v2.3/dispositivos/{dispositivo_id}", headers=headers)
     assert response.status_code == 200
     assert response.json()["message"] == "Dispositivo eliminado"
 
-    response = client.get(f"/api/v2.2/dispositivos/{dispositivo_id}", headers=headers)
+    response = client.get(f"/api/v2.3/dispositivos/{dispositivo_id}", headers=headers)
     assert response.status_code == 404
 
 def test_actualizar_dispositivo(client, token):
     headers = {"Authorization": f"Bearer {token}"}
-    response = client.get("/api/v2.2/dispositivos", headers=headers)
+    response = client.get("/api/v2.3/dispositivos", headers=headers)
     dispositivo = response.json()[0]
     dispositivo_id = dispositivo["id"]
 
@@ -167,15 +167,15 @@ def test_actualizar_dispositivo(client, token):
         "active": False
     }
 
-    response = client.patch(f"/api/v2.2/dispositivos/{dispositivo_id}", json=update_data, headers=headers)
+    response = client.patch(f"/api/v2.3/dispositivos/{dispositivo_id}", json=update_data, headers=headers)
     assert response.status_code == 200
 
 def test_obtener_dispositivo_por_usuario(client, token):
     headers = {"Authorization": f"Bearer {token}"}
-    response_users = client.get("/api/v2.2/usuarios", headers=headers)
+    response_users = client.get("/api/v2.3/usuarios", headers=headers)
     user_id = response_users.json()[0]["id"]
 
-    response = client.get(f"/api/v2.2/dispositivos/usuario/{user_id}", headers=headers)
+    response = client.get(f"/api/v2.3/dispositivos/usuario/{user_id}", headers=headers)
     if response.status_code == 404:
         assert response.json()["detail"] == "No se encontraron dispositivos para este usuario"
     else:

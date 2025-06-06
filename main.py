@@ -245,7 +245,7 @@ def validacion_mac(mac):
     patron = r'^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$'
     return re.match(patron, mac) is not None
 
-@app.post(ruta_inicial + "dispositivos/{id_usuario}", response_model=models.MostrarDispositivo)
+@app.post(ruta_inicial + "dispositivos/{id_usuario}", response_model=models.MostrarDispositivoConRegistros)
 def crear_dispositivo(id_usuario: int,dispositivo: models.CrearDispositivo, db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
     usuario_existente = db.query(UsuarioDB).filter(UsuarioDB.id == id_usuario).first()
 
@@ -255,7 +255,7 @@ def crear_dispositivo(id_usuario: int,dispositivo: models.CrearDispositivo, db: 
     if not dispositivo.mac or not validacion_mac(dispositivo.mac):
         raise HTTPException(status_code=400, detail="MAC inválida. Debe tener el formato XX:XX:XX:XX:XX:XX o XX-XX-XX-XX-XX-XX")
 
-    nuevo_dispositivo = DispositivoDB(active=dispositivo.active, nombre=dispositivo.nombre, usuario_id=id_usuario, mac=dispositivo.mac)
+    nuevo_dispositivo = DispositivoDB(active=dispositivo.active, nombre=dispositivo.nombre, mac=dispositivo.mac, usuario_id=id_usuario)
     db.add(nuevo_dispositivo)
     db.commit()
     db.refresh(nuevo_dispositivo)

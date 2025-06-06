@@ -30,7 +30,7 @@ class UsuarioDB(Base):
 
     dispositivos = relationship("DispositivoDB", back_populates="usuario", cascade="all, delete")
     rol = relationship("RolDB", back_populates="usuarios")
-    
+
 class DispositivoDB(Base):
     __tablename__ = "dispositivos"
 

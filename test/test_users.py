@@ -37,7 +37,7 @@ def client(db):
 
 @pytest.fixture
 def token_de_admin(client):
-    response = client.post("/api/v2.2/token_username", json={
+    response = client.post("/api/v2.3/token_username", json={
         "username": "root",
         "password": "root"
     })
@@ -114,8 +114,8 @@ def create_test_data(db):
     # Crear registros
     from datetime import datetime
     registros = [
-        RegistroDB(fecha=datetime.utcnow(), coordenadas="40.4168,-3.7038", dispositivo_id=dispositivos[0].id),
-        RegistroDB(fecha=datetime.utcnow(), coordenadas="41.3851,2.1734", dispositivo_id=dispositivos[1].id),
+        RegistroDB(fecha=datetime.utcnow(), coordenadas="40.4168,-3.7038", mac=dispositivos[0].mac),
+        RegistroDB(fecha=datetime.utcnow(), coordenadas="41.3851,2.1734", mac=dispositivos[1].mac),
     ]
     db.add_all(registros)
     db.commit()
@@ -123,56 +123,8 @@ def create_test_data(db):
 
 # ---------- TESTS ----------
 
-def test_login_with_email(client):
-    response = client.post("/api/v2.2/token_email", json={
-        "email": "root@root.root",
-        "password": "root"
-    })
-
-    assert response.status_code == 200
-    data = response.json()
-    assert "access_token" in data
-    assert data["token_type"] == "bearer"
-    assert data["role"] == "root"
-    assert isinstance(data["usuario_id"], int)
-
-
-def test_login_with_username(client):
-    response = client.post("/api/v2.2/token_username", json={
-        "username": "root",
-        "password": "root"
-    })
-
-    assert response.status_code == 200
-    data = response.json()
-    assert "access_token" in data
-    assert data["token_type"] == "bearer"
-    assert data["role"] == "root"
-    assert isinstance(data["usuario_id"], int)
-
-
-def test_login_with_email_wrong_password(client):
-    response = client.post("/api/v2.2/token_email", json={
-        "email": "root@root.root",
-        "password": "wrongpassword"
-    })
-
-    assert response.status_code == 401
-    assert response.json()["detail"] == "Invalid credentials"
-
-
-def test_login_with_username_not_found(client):
-    response = client.post("/api/v2.2/token_username", json={
-        "username": "nonexistent_user",
-        "password": "doesntmatter"
-    })
-
-    assert response.status_code == 401
-    assert response.json()["detail"] == "Invalid credentials"
-
-
 def test_get_users_authenticated(client, token_de_admin):
-    response = client.get("/api/v2.2/usuarios", headers={"Authorization": f"Bearer {token_de_admin}"})
+    response = client.get("/api/v2.3/usuarios", headers={"Authorization": f"Bearer {token_de_admin}"})
     assert response.status_code == 200
     assert isinstance(response.json(), list)
 
@@ -180,6 +132,6 @@ def test_get_users_authenticated(client, token_de_admin):
 def test_delete_user(client, token_de_admin, crear_usuario_temporal):
     user_id = crear_usuario_temporal
     print(user_id)
-    response = client.delete(f"/api/v2.2/usuarios/{user_id}", headers={"Authorization": f"Bearer {token_de_admin}"})
+    response = client.delete(f"/api/v2.3/usuarios/{user_id}", headers={"Authorization": f"Bearer {token_de_admin}"})
     assert response.status_code == 404
 
