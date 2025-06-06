@@ -66,6 +66,8 @@ class MostrarUsuario(BaseModel):
     class Config:
         orm_mode = True
 
+        
+
 """ ------- DISPOSITIVOS ------- """
 class Dispositivo(BaseModel):
     id: Optional[int] = None
@@ -83,7 +85,9 @@ class MostrarDispositivo(BaseModel):
     active: Optional[bool] = None
     usuario: MostrarUsuario
     class Config:
-        orm_mode = True      
+        orm_mode = True  
+
+         
 
 class MostrarDispositivoSinUsuario(BaseModel):
     id: Optional[int] = None
@@ -114,7 +118,6 @@ class Registro(BaseModel):
     id: Optional[int] = None
     fecha: Optional[datetime] = None
     coordenadas: str
-    dispositivo_id: int
     class Config:
         orm_mode = True 
 
@@ -132,3 +135,15 @@ class CrearRegistro(BaseModel):
     mac: str
     class Config:
         orm_mode = True       
+
+
+
+
+class MostrarDispositivoConRegistros(BaseModel):
+    id: Optional[int] = None
+    mac: Optional[str] = None
+    nombre: Optional[str] = None
+    active: Optional[bool] = None
+    registros: list[Registro] = []
+    class Config:
+        orm_mode = True          

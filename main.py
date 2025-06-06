@@ -19,7 +19,7 @@ from email.mime.multipart import MIMEMultipart
 
 app = FastAPI()
 
-ruta_inicial = "/api/v2.2/"
+ruta_inicial = "/api/v2.3/"
 base_url = "192.168.49.2:30080"
 
 # Middleware CORS para permitir peticiones desde cualquier origen
@@ -225,6 +225,20 @@ def cambiar_contrasena( usuario_id: int, token: str , datos: models.UsuarioCambi
 def obtener_dispositivos(db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
     return db.query(DispositivoDB).all()
 
+@app.get(ruta_inicial + "dispositivos/registros/{id_dispositivo}", response_model=models.MostrarDispositivoConRegistros)
+def obtener_dispositivos_con_registros(id_dispositivo: int ,db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
+    dispositivo = db.query(DispositivoDB).filter(DispositivoDB.id == id_dispositivo).first()
+    if not dispositivo:
+        raise HTTPException(status_code=404, detail="Dispositivo no encontrado")
+    return dispositivo
+
+# Obtener dispositivo por id
+@app.get(ruta_inicial + "dispositivos/{dispositivo_id}", response_model=models.MostrarDispositivo)
+def obtener_dispositivo(dispositivo_id: int, db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
+    dispositivo = db.query(DispositivoDB).filter(DispositivoDB.id == dispositivo_id).first()
+    if not dispositivo:
+        raise HTTPException(status_code=404, detail="Dispositivo no encontrado")
+    return dispositivo
 
 def validacion_mac(mac):
     # Patrón para MAC con ':' o '-' como separador
@@ -247,13 +261,7 @@ def crear_dispositivo(id_usuario: int,dispositivo: models.CrearDispositivo, db: 
     db.refresh(nuevo_dispositivo)
     return nuevo_dispositivo
 
-# Obtener dispositivo por id
-@app.get(ruta_inicial + "dispositivos/{dispositivo_id}", response_model=models.MostrarDispositivo)
-def obtener_dispositivo(dispositivo_id: int, db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
-    dispositivo = db.query(DispositivoDB).filter(DispositivoDB.id == dispositivo_id).first()
-    if not dispositivo:
-        raise HTTPException(status_code=404, detail="Dispositivo no encontrado")
-    return dispositivo
+
 
 @app.get(ruta_inicial + "dispositivos/usuario/{usuario_id}", response_model=List[models.MostrarDispositivoSinUsuario])
 def obtener_dispositivo_por_usuario(usuario_id: int, db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
@@ -290,6 +298,8 @@ def actualizar_dispositivo(dispositivo_id: int, dispositivo: models.ActualizarDi
     db.commit()
     db.refresh(dispositivo_existente)
     return dispositivo_existente
+
+
 
 
 '''--------------------- ROLES ---------------------'''
@@ -360,7 +370,7 @@ def crear_registro(registro: models.CrearRegistro, db: Session = Depends(get_db)
 
     nuevo_registro = RegistroDB(
         coordenadas=coordenadas,  # Solo almacenamos las coordenadas
-        dispositivo_id=dispositivo_existente.id
+        mac=dispositivo_existente.mac
     )
 
     db.add(nuevo_registro)

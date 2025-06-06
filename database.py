@@ -9,7 +9,7 @@ load_dotenv()
 
 usuarioDb = os.getenv("BBDD_USER")
 passwordDb = os.getenv("BBDD_PASSWORD")
-DATABASE_URL = f"postgresql://{usuarioDb}:{passwordDb}@127.0.0.1:5432/postgres"
+DATABASE_URL = f"postgresql://{usuarioDb}:{passwordDb}@db:5432/postgres"
 engine = create_engine(DATABASE_URL)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -30,7 +30,7 @@ class UsuarioDB(Base):
 
     dispositivos = relationship("DispositivoDB", back_populates="usuario", cascade="all, delete")
     rol = relationship("RolDB", back_populates="usuarios")
-
+    
 class DispositivoDB(Base):
     __tablename__ = "dispositivos"
 
@@ -49,9 +49,13 @@ class RegistroDB(Base):
     id = Column(Integer, primary_key=True, index=True)
     fecha = Column(DateTime, default=datetime.datetime.utcnow)
     coordenadas = Column(String)
-    dispositivo_id = Column(Integer, ForeignKey("dispositivos.id", ondelete="CASCADE"))
+    mac = Column(String, ForeignKey("dispositivos.mac", ondelete="CASCADE"), nullable=False)
 
-    dispositivo = relationship("DispositivoDB", back_populates="registros")
+    dispositivo = relationship(
+        "DispositivoDB",
+        back_populates="registros",
+        foreign_keys=[mac]
+    )
 
 class RolDB(Base):
     __tablename__ = "roles"
