@@ -52,6 +52,10 @@ def get_db():
     finally:
         db.close()
 
+
+
+
+
 '''--------------------- AUTENTICACIÓN ---------------------'''
 def hash_password(password: str) -> str:
     """ Hashea la contraseña usando bcrypt """

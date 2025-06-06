@@ -1,12 +1,26 @@
-fastapi==0.115.12
-python-jose==3.3.0  
-passlib==1.7.4
-pydantic==2.11.4
+# Core FastAPI
+fastapi==0.115.2
 uvicorn==0.34.0
-python-dotenv==1.1.0
-SQLAlchemy==2.0.41
-starlette==0.46.2
+starlette==0.37.2
 watchfiles==1.0.4
 websockets==15.0.1
-python-dotenv
+
+# Seguridad y autenticación
+python-jose==3.3.0
+passlib==1.7.4
+
+# Validación y configuración
+pydantic==2.11.4
+python-dotenv==1.1.0
+
+# Base de datos
+SQLAlchemy==2.0.41
 psycopg2-binary
+
+# Migraciones (opcional pero recomendado)
+alembic
+
+# Testing
+pytest
+httpx
+pytest-cov

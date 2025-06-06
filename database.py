@@ -1,6 +1,6 @@
 import os
 from sqlalchemy import create_engine, Column, String, Boolean, ForeignKey, DateTime, Integer, select
-from sqlalchemy.orm import declarative_base, sessionmaker, relationship
+from sqlalchemy.orm import declarative_base, sessionmaker, relationship, Session
 import datetime
 from passlib.context import CryptContext
 from dotenv import load_dotenv
@@ -9,7 +9,7 @@ load_dotenv()
 
 usuarioDb = os.getenv("BBDD_USER")
 passwordDb = os.getenv("BBDD_PASSWORD")
-DATABASE_URL = f"postgresql://{usuarioDb}:{passwordDb}@db:5432/postgres"
+DATABASE_URL = f"postgresql://{usuarioDb}:{passwordDb}@127.0.0.1:5432/postgres"
 engine = create_engine(DATABASE_URL)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -87,3 +87,11 @@ def create_initial_roles_and_root():
 
 Base.metadata.create_all(bind=engine)
 create_initial_roles_and_root()  
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
