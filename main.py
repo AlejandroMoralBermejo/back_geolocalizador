@@ -313,6 +313,18 @@ def obtener_roles(db: Session = Depends(get_db), current_user: UsuarioDB = Depen
 def obtener_registros(db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
     return db.query(RegistroDB).all()
 
+@app.get(ruta_inicial + "registros/dispositivos/{id_dispositivo}", response_model=List[models.MostrarRegistro])
+def obtener_registros_por_dispositivo(id_dispositivo: int, db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
+    dispositivo = db.query(DispositivoDB).filter(DispositivoDB.id == id_dispositivo).first()
+    
+    if not dispositivo:
+        raise HTTPException(status_code=404, detail="Dispositivo no encontrado")
+    
+
+    registros = db.query(RegistroDB).filter(RegistroDB.mac == dispositivo.mac).all()
+    if not registros:
+        raise HTTPException(status_code=404, detail="No se encontraron registros para este dispositivo")
+    return registros
 
 # Funcion para formatear la fecha
 def formateo(datos_gnss):
