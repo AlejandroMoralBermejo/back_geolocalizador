@@ -58,6 +58,13 @@ class UsuarioCambioContrasena(BaseModel):
     class Config:
         orm_mode = True  
 
+class ActualizarUsuario(BaseModel):
+    username: Optional[str] = None
+    email: Optional[str] = None
+    rol_id: Optional[int] = None
+    class Config:
+        orm_mode = True
+
 class MostrarUsuario(BaseModel):
     id: Optional[int] = None
     username: str

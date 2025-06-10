@@ -15,6 +15,8 @@ from dotenv import load_dotenv
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from sqlalchemy.exc import IntegrityError
+from psycopg2.errors import UniqueViolation 
 
 
 app = FastAPI()
@@ -138,6 +140,13 @@ def login_for_access_token_with_username(form_data: models.UsuarioLoginWithUsern
 def obtener_usuarios(db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
     return db.query(UsuarioDB).all()
 
+@app.get(ruta_inicial + "usuarios/{usuario_id}", response_model=models.MostrarUsuario)
+def obtener_usuario(usuario_id: int, db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
+    usuario = db.query(UsuarioDB).filter(UsuarioDB.id == usuario_id).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    return usuario
+
 @app.post(ruta_inicial + "usuarios", response_model=models.MostrarUsuario)
 def crear_usuario(usuario: models.UsuarioCreacion, db: Session = Depends(get_db)):
     """ Crea un nuevo usuario con la contraseña hasheada """
@@ -148,12 +157,29 @@ def crear_usuario(usuario: models.UsuarioCreacion, db: Session = Depends(get_db)
     db.refresh(nuevo_usuario)
     return nuevo_usuario
 
-@app.get(ruta_inicial + "usuarios/{usuario_id}", response_model=models.MostrarUsuario)
-def obtener_usuario(usuario_id: int, db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
-    usuario = db.query(UsuarioDB).filter(UsuarioDB.id == usuario_id).first()
-    if not usuario:
+@app.patch(ruta_inicial + "usuarios/{usuario_id}", response_model=models.MostrarUsuario)
+def actualizar_usuario(usuario_id: int, usuario: models.ActualizarUsuario, db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
+    usuario_existente = db.query(UsuarioDB).filter(UsuarioDB.id == usuario_id).first()
+    if not usuario_existente:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    return usuario
+    
+    if usuario.username is not None:
+        if not usuario.username:
+            raise HTTPException(status_code=400, detail="El nombre de usuario no puede estar vacío") 
+        usuario_existente.username = usuario.username
+    if usuario.email is not None:
+        if not usuario.email:
+            raise HTTPException(status_code=400, detail="El email no puede estar vacío")
+        usuario_existente.email = usuario.email
+    if usuario.rol_id is not None:
+        rol_existente = db.query(RolDB).filter(RolDB.id == usuario.rol_id).first()
+        if not rol_existente:
+            raise HTTPException(status_code=404, detail="Rol no encontrado")
+        usuario_existente.rol_id = usuario.rol_id
+
+    db.commit()
+    db.refresh(usuario_existente)
+    return usuario_existente
 
 @app.delete(ruta_inicial + "usuarios/{usuario_id}")
 def eliminar_usuario(usuario_id: int, db: Session = Depends(get_db),current_user: UsuarioDB = Depends(get_current_user)):
@@ -246,7 +272,7 @@ def validacion_mac(mac):
     return re.match(patron, mac) is not None
 
 @app.post(ruta_inicial + "dispositivos/{id_usuario}", response_model=models.MostrarDispositivoConRegistros)
-def crear_dispositivo(id_usuario: int,dispositivo: models.CrearDispositivo, db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
+def crear_dispositivo(id_usuario: int, dispositivo: models.CrearDispositivo, db: Session = Depends(get_db), current_user: UsuarioDB = Depends(get_current_user)):
     usuario_existente = db.query(UsuarioDB).filter(UsuarioDB.id == id_usuario).first()
 
     if not usuario_existente:
@@ -255,12 +281,25 @@ def crear_dispositivo(id_usuario: int,dispositivo: models.CrearDispositivo, db: 
     if not dispositivo.mac or not validacion_mac(dispositivo.mac):
         raise HTTPException(status_code=400, detail="MAC inválida. Debe tener el formato XX:XX:XX:XX:XX:XX o XX-XX-XX-XX-XX-XX")
 
-    nuevo_dispositivo = DispositivoDB(active=dispositivo.active, nombre=dispositivo.nombre, mac=dispositivo.mac, usuario_id=id_usuario)
-    db.add(nuevo_dispositivo)
-    db.commit()
-    db.refresh(nuevo_dispositivo)
-    return nuevo_dispositivo
+    nuevo_dispositivo = DispositivoDB(
+        active=dispositivo.active,
+        nombre=dispositivo.nombre,
+        mac=dispositivo.mac,
+        usuario_id=id_usuario
+    )
 
+    db.add(nuevo_dispositivo)
+    try:
+        db.commit()
+        db.refresh(nuevo_dispositivo)
+    except IntegrityError as e:
+        db.rollback()
+        # Verificamos si es una violación del constraint único de la MAC
+        if isinstance(e.orig, UniqueViolation):
+            raise HTTPException(status_code=400, detail="La dirección MAC ya está registrada")
+        raise HTTPException(status_code=500, detail="Error inesperado al guardar el dispositivo")
+
+    return nuevo_dispositivo
 
 
 @app.get(ruta_inicial + "dispositivos/usuario/{usuario_id}", response_model=List[models.MostrarDispositivoSinUsuario])
